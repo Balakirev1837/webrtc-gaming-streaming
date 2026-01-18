@@ -2,7 +2,7 @@
 
 🎮 **Stream your gaming PC to local viewers with sub-second latency using AV1 and WebRTC**
 
-> **Perfect for:** Gaming on 1440p@144Hz while family watches via a simple web bookmark. Optimized for low-power mini PCs like OptiPlex.
+> **Perfect for:** Gaming at any resolution while family watches via a simple web bookmark. Supports 720p-1080p streaming. Optimized for low-power mini PCs like OptiPlex.
 
 **Repository:** https://github.com/Balakirev1837/webrtc-gaming-streaming
 
@@ -49,9 +49,9 @@ That's it! Your stream is ready. Viewers just need to bookmark the URL.
 A complete solution for streaming your Fedora + Wayland gaming PC over WebRTC to local network viewers using Broadcast Box:
 
 ```
-Gaming PC (Fedora + Wayland @ 1440p@144Hz)
+Gaming PC (Fedora + Wayland @ your preferred resolution)
     ↓ HDMI out
-HDMI Splitter
+HDMI Splitter (optional, for simultaneous monitor viewing)
     ↓ HDMI
 Capture Card (USB 3.0)
     ↓
@@ -67,10 +67,11 @@ Viewers (Browsers) → http://mini-pc.local:8080/gaming
 
 ✅ **AV1 Encoding** - 50% bandwidth savings vs H.264, excellent quality at 4-6 Mbps
 ✅ **Low Latency** - Sub-second streaming with WebRTC (~450-650ms)
-✅ **OptiPlex Optimized** - Direct 1440p→720p downscale, 45-60% CPU usage
+✅ **OptiPlex Optimized** - Direct downscale from any input to 720p@60fps, 45-60% CPU usage
 ✅ **Zero-Config Viewer** - Wife bookmarks URL, clicks to watch instantly
 ✅ **Web Control Panel** - Start/stop stream from browser, no SSH needed
-✅ **Multiple Quality Options** - 720p (OptiPlex), 1080p (high-end), H.264 fallback
+✅ **Flexible Resolution Options** - 720p (OptiPlex), 1080p (high-end), supports any input resolution
+✅ **H.264 Fallback** - Available if AV1 not supported by hardware
 ✅ **Local Network Only** - No external bandwidth, secure by default
 ✅ **Production Ready** - Systemd services, auto-restart, comprehensive docs
 
@@ -160,15 +161,17 @@ broadcast/
 
 ### Option A: OptiPlex 7070-570X4 (Recommended)
 
-**For:** 1440p@144Hz gaming + OptiPlex mini PC
+**For:** Any resolution gaming + OptiPlex mini PC
 
 **Configuration:**
-- Capture: 1440p@144Hz (native)
-- Output: 720p@60fps (direct downscale)
+- Capture: At your native resolution (e.g., 1440p@144Hz)
+- Output: 720p@60fps (direct downscale from capture)
 - Codec: AV1 (SVT-AV1)
 - CPU: 45-60% ✅ Sustainable
 - Bitrate: 4000 Kbps
 - Bandwidth: 4-6 Mbps
+
+**Note:** The OptiPlex script captures at whatever resolution your gaming PC outputs (commonly 1440p@144Hz) and downscales to 720p@60fps for optimal CPU performance on 4-core systems.
 
 **Setup:**
 ```bash
@@ -189,7 +192,7 @@ sudo systemctl start optiplex-stream
 **For:** Maximum quality viewing
 
 **Configuration:**
-- Capture: 1440p@144Hz
+- Capture: At your native resolution (e.g., 1080p@60Hz or 1440p@144Hz)
 - Output: 1080p@60fps
 - Codec: AV1 (software or hardware)
 - CPU: 70-80% (software) or 15-25% (hardware)

@@ -57,11 +57,11 @@ That's it! Your stream is ready. Viewers just need to bookmark the URL.
 
 ### Option A: OptiPlex 7070-570X4 (Recommended)
 
-**For:** 1440p@144Hz gaming + OptiPlex mini PC
+**For:** Any resolution gaming + OptiPlex mini PC
 
 **Configuration:**
-- Capture: 1440p@144Hz (native)
-- Output: 720p@60fps (direct downscale)
+- Capture: At your native gaming resolution (e.g., 1440p@144Hz)
+- Output: 720p@60fps (direct downscale from capture)
 - Codec: AV1 (SVT-AV1)
 - CPU: 45-60% ✅ Sustainable
 - Bitrate: 4000 Kbps
