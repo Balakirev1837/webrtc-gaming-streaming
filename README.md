@@ -4,13 +4,15 @@
 
 > **Perfect for:** Gaming on 1440p@144Hz while family watches via a simple web bookmark. Optimized for low-power mini PCs like OptiPlex.
 
+**Repository:** https://github.com/Balakirev1837/webrtc-gaming-streaming
+
 ## 🚀 Quick Start (Git Deployment)
 
 Clone this repo and deploy to your mini PC in 5 minutes:
 
 ```bash
 # 1. Clone this repository
-git clone https://github.com/YOUR_USERNAME/broadcast.git
+git clone https://github.com/Balakirev1837/webrtc-gaming-streaming.git
 cd broadcast
 
 # 2. Copy to mini PC (replace user@mini-pc with your details)
