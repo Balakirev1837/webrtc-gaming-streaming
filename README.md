@@ -467,4 +467,4 @@ Uses open-source components:
 
 **🚀 Ready to stream? Clone this repo and deploy to your mini PC in 5 minutes!**
 
-**📖 Start with:** [Hardware Checklist](mini-pc-setup/docs/HARDWARE_CHECKLIST.md) → [Setup Guide](mini-pc-setup/docs/SETUP_GUIDE.md)
+**📖 Start with:** [Deployment Guide](DEPLOYMENT.md) → [Hardware Checklist](mini-pc-setup/docs/HARDWARE_CHECKLIST.md) → [Setup Guide](mini-pc-setup/docs/SETUP_GUIDE.md)
