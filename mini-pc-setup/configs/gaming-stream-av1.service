@@ -1,0 +1,30 @@
+[Unit]
+Description=Gaming WebRTC Stream (AV1)
+Requires=broadcast-box.service
+After=broadcast-box.service
+
+[Service]
+Type=simple
+User=streamer
+WorkingDirectory=/home/streamer/streaming
+Environment="STREAM_KEY=gaming"
+Environment="SERVER_URL=http://localhost:8080/api/whip"
+Environment="VIDEO_DEVICE=/dev/video0"
+# Default to SVT-AV1 (fastest software), change to:
+# - stream-av1-nvenc.sh for NVIDIA RTX 40-series
+# - stream-av1-vaapi.sh for Intel Arc/AMD RDNA3+
+# - stream-av1-svt.sh for SVT-AV1 software encoding
+# - stream-av1.sh for RAV1E software encoding
+ExecStart=/home/streamer/streaming/stream-av1-svt.sh
+Restart=always
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/streamer/streaming
+
+[Install]
+WantedBy=multi-user.target

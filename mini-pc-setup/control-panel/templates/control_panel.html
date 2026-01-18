@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header h1::before {
+            content: "🎮";
+            font-size: 32px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-value.good {
+            color: #10b981;
+        }
+
+        .status-value.warning {
+            color: #f59e0b;
+        }
+
+        .status-value.error {
+            color: #ef4444;
+        }
+
+        .status-value.active {
+            color: #10b981;
+        }
+
+        .status-value.inactive {
+            color: #ef4444;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .script-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .script-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .script-option.selected {
+            border-color: #667eea;
+            background: #e0e7ff;
+        }
+
+        .script-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .script-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .script-details {
+            font-size: 13px;
+            color: #666;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge.hardware {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge.software {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge.av1 {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge.h264 {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .badge.recommended {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #22c55e;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input[type="range"] {
+            height: 8px;
+            -webkit-appearance: none;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .form-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-value {
+            font-weight: bold;
+            color: #667eea;
+            margin-left: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .stream-url {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .stream-url-label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+
+        .stream-url-value {
+            font-family: monospace;
+            font-size: 16px;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+
+        .log-section {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #374151;
+        }
+
+        .log-entry.error {
+            color: #ef4444;
+        }
+
+        .log-entry.warning {
+            color: #f59e0b;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Stream Control Panel</h1>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-label">Stream Status</div>
+                    <div class="status-value" id="streamStatus">Loading...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Broadcast Box</div>
+                    <div class="status-value" id="broadcastBoxStatus">Loading...</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">CPU Usage</div>
+                    <div class="status-value" id="cpuUsage">0%</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Memory</div>
+                    <div class="status-value" id="memoryUsage">0%</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">GPU</div>
+                    <div class="status-value" id="gpuUsage">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">🎬 Streaming Script</div>
+                <div id="scriptOptions">
+                    Loading scripts...
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">⚙️ Stream Settings</div>
+                <div class="form-group">
+                    <label>Stream Key</label>
+                    <input type="text" id="streamKey" value="gaming">
+                </div>
+                <div class="form-group">
+                    <label>Resolution</label>
+                    <select id="resolution">
+                        <option value="1920x1080">1920x1080 (1080p)</option>
+                        <option value="1280x720">1280x720 (720p)</option>
+                        <option value="2560x1440">2560x1440 (1440p)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Frame Rate</label>
+                    <select id="fps">
+                        <option value="60">60 FPS</option>
+                        <option value="30">30 FPS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Video Bitrate: <span class="range-value" id="bitrateValue">6000</span> Kbps</label>
+                    <input type="range" id="bitrate" min="2000" max="15000" value="6000" step="500">
+                </div>
+                <div class="form-group">
+                    <label>Audio Bitrate: <span class="range-value" id="audioBitrateValue">192</span> Kbps</label>
+                    <input type="range" id="audioBitrate" min="64" max="320" value="192" step="32">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🎮 Stream Control</div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="toggleBtn" onclick="toggleStream()">
+                        <span id="toggleBtnText">▶️ Start Stream</span>
+                    </button>
+                    <button class="btn btn-warning" id="restartBtn" onclick="restartStream()" disabled>
+                        🔄 Restart
+                    </button>
+                    <button class="btn btn-danger" id="stopBtn" onclick="stopStream()" disabled>
+                        ⏹️ Stop
+                    </button>
+                </div>
+                <div class="stream-url">
+                    <div class="stream-url-label">📺 Stream URL (for viewers)</div>
+                    <div class="stream-url-value">
+                        <span id="streamUrl">http://<window.location.hostname>:8080/gaming</span>
+                        <button class="copy-btn" onclick="copyStreamUrl()">📋 Copy</button>
+                    </div>
+                </div>
+                <div class="log-section" id="logSection">
+                    <div class="log-entry">Ready to stream...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedScript = null;
+        let config = {};
+        let statsInterval = null;
+
+        // Load initial data
+        async function init() {
+            await loadScripts();
+            await loadConfig();
+            await updateStatus();
+            
+            // Start polling
+            statsInterval = setInterval(() => {
+                updateStats();
+                updateStatus();
+            }, 2000);
+
+            // Update stream URL
+            document.getElementById('streamUrl').textContent = 
+                `http://${window.location.hostname}:8080/${config.stream_key || 'gaming'}`;
+        }
+
+        async function loadScripts() {
+            try {
+                const response = await fetch('/api/scripts');
+                const data = await response.json();
+                renderScripts(data.scripts, data.supported);
+            } catch (error) {
+                console.error('Failed to load scripts:', error);
+                document.getElementById('scriptOptions').innerHTML = 
+                    '<div style="color: red;">Failed to load scripts</div>';
+            }
+        }
+
+        function renderScripts(scripts, supported) {
+            const container = document.getElementById('scriptOptions');
+            container.innerHTML = '';
+
+            for (const [id, script] of Object.entries(scripts)) {
+                const isSupported = supported[id];
+                const isSelected = config.selected_script === id;
+
+                const div = document.createElement('div');
+                div.className = `script-option ${isSelected ? 'selected' : ''} ${!isSupported ? 'disabled' : ''}`;
+                div.onclick = () => selectScript(id, isSupported);
+                
+                const badges = `
+                    <span class="badge ${script.type}">${script.type}</span>
+                    <span class="badge ${script.codec}">${script.codec}</span>
+                    ${script.recommended ? '<span class="badge recommended">Recommended</span>' : ''}
+                `;
+
+                div.innerHTML = `
+                    <div class="script-name">${script.name}</div>
+                    <div class="script-details">${badges}</div>
+                `;
+
+                container.appendChild(div);
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                config = await response.json();
+                applyConfigToUI();
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        function applyConfigToUI() {
+            document.getElementById('streamKey').value = config.stream_key || 'gaming';
+            document.getElementById('resolution').value = config.resolution || '1920x1080';
+            document.getElementById('fps').value = config.fps || 60;
+            document.getElementById('bitrate').value = config.bitrate || 6000;
+            document.getElementById('audioBitrate').value = config.audio_bitrate || 192;
+            document.getElementById('bitrateValue').textContent = config.bitrate || 6000;
+            document.getElementById('audioBitrateValue').textContent = config.audio_bitrate || 192;
+        }
+
+        function selectScript(scriptId, isSupported) {
+            if (!isSupported) return;
+            selectedScript = scriptId;
+            config.selected_script = scriptId;
+            document.querySelectorAll('.script-option').forEach(el => el.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+
+        async function startStream() {
+            if (!selectedScript) {
+                addLog('Please select a streaming script first', 'error');
+                return;
+            }
+
+            config.stream_key = document.getElementById('streamKey').value;
+            config.resolution = document.getElementById('resolution').value;
+            config.fps = parseInt(document.getElementById('fps').value);
+            config.bitrate = parseInt(document.getElementById('bitrate').value);
+            config.audio_bitrate = parseInt(document.getElementById('audioBitrate').value);
+
+            addLog('Starting stream...');
+            
+            try {
+                const response = await fetch('/api/stream/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        script_id: selectedScript,
+                        config: config
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('Stream started successfully!');
+                    document.getElementById('streamUrl').textContent = 
+                        `http://${window.location.hostname}:8080/${config.stream_key}`;
+                } else {
+                    addLog(`Failed to start: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopStream() {
+            addLog('Stopping stream...');
+            
+            try {
+                const response = await fetch('/api/stream/stop', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('Stream stopped successfully!');
+                } else {
+                    addLog(`Failed to stop: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function restartStream() {
+            addLog('Restarting stream...');
+
+            try {
+                const response = await fetch('/api/stream/restart', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('Stream restarted successfully!');
+                } else {
+                    addLog(`Failed to restart: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function toggleStream() {
+            if (!selectedScript && !config.selected_script) {
+                addLog('Please select a streaming script first', 'error');
+                return;
+            }
+
+            config.stream_key = document.getElementById('streamKey').value;
+            config.resolution = document.getElementById('resolution').value;
+            config.fps = parseInt(document.getElementById('fps').value);
+            config.bitrate = parseInt(document.getElementById('bitrate').value);
+            config.audio_bitrate = parseInt(document.getElementById('audioBitrate').value);
+
+            addLog('Toggling stream...');
+
+            try {
+                const response = await fetch('/api/stream/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        script_id: selectedScript || config.selected_script,
+                        config: config
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    addLog('Stream toggled successfully!');
+                    await updateStatus();
+                    updateStreamButton();
+                } else {
+                    addLog(`Failed to toggle: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function updateStreamButton() {
+            const status = getStreamStatus();
+            const button = document.getElementById('toggleBtn');
+            const text = document.getElementById('toggleBtnText');
+
+            fetch('/api/status').then(response => response.json()).then(status => {
+                if (status.streaming) {
+                    button.className = 'btn btn-danger';
+                    text.textContent = '⏹️ Stop Stream';
+                } else {
+                    button.className = 'btn btn-primary';
+                    text.textContent = '▶️ Start Stream';
+                }
+            });
+        }
+
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                document.getElementById('cpuUsage').textContent = `${stats.cpu.toFixed(0)}%`;
+                document.getElementById('cpuUsage').className = 
+                    `status-value ${stats.cpu > 80 ? 'error' : stats.cpu > 60 ? 'warning' : 'good'}`;
+                
+                document.getElementById('memoryUsage').textContent = `${stats.memory.toFixed(0)}%`;
+                document.getElementById('memoryUsage').className = 
+                    `status-value ${stats.memory > 80 ? 'error' : stats.memory > 60 ? 'warning' : 'good'}`;
+
+                if (stats.gpu) {
+                    document.getElementById('gpuUsage').textContent = 
+                        `${stats.gpu.name} (${stats.gpu.utilization}%)`;
+                }
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+
+                const streamEl = document.getElementById('streamStatus');
+                const boxEl = document.getElementById('broadcastBoxStatus');
+                const toggleBtn = document.getElementById('toggleBtn');
+                const toggleBtnText = document.getElementById('toggleBtnText');
+                const restartBtn = document.getElementById('restartBtn');
+                const stopBtn = document.getElementById('stopBtn');
+
+                streamEl.textContent = status.streaming ? 'Active' : 'Inactive';
+                streamEl.className = `status-value ${status.streaming ? 'active' : 'inactive'}`;
+
+                boxEl.textContent = status.broadcast_box ? 'Running' : 'Stopped';
+                boxEl.className = `status-value ${status.broadcast_box ? 'active' : 'inactive'}`;
+
+                if (status.streaming) {
+                    toggleBtn.className = 'btn btn-danger';
+                    toggleBtnText.textContent = '⏹️ Stop Stream';
+                } else {
+                    toggleBtn.className = 'btn btn-primary';
+                    toggleBtnText.textContent = '▶️ Start Stream';
+                }
+
+                restartBtn.disabled = !status.streaming;
+                stopBtn.disabled = !status.streaming;
+
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const logSection = document.getElementById('logSection');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            
+            logSection.appendChild(entry);
+            logSection.scrollTop = logSection.scrollHeight;
+        }
+
+        function copyStreamUrl() {
+            const url = document.getElementById('streamUrl').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                addLog('Stream URL copied to clipboard!');
+            });
+        }
+
+        // Event listeners
+        document.getElementById('bitrate').addEventListener('input', (e) => {
+            document.getElementById('bitrateValue').textContent = e.target.value;
+        });
+
+        document.getElementById('audioBitrate').addEventListener('input', (e) => {
+            document.getElementById('audioBitrateValue').textContent = e.target.value;
+        });
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

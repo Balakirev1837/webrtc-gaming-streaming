@@ -1,0 +1,26 @@
+[Unit]
+Description=OptiPlex WebRTC Stream (AV1 Optimized)
+Requires=broadcast-box.service
+After=broadcast-box.service
+
+[Service]
+Type=simple
+User=streamer
+WorkingDirectory=/home/streamer/streaming
+Environment="STREAM_KEY=gaming"
+Environment="SERVER_URL=http://localhost:8080/api/whip"
+Environment="VIDEO_DEVICE=/dev/video0"
+Environment="RESOLUTION=1280x720"
+Environment="BITRATE=4000"
+ExecStart=/home/streamer/streaming/stream-av1-optiplex.sh
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/streamer/streaming /dev
+
+[Install]
+WantedBy=multi-user.target

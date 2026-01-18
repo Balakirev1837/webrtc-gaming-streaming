@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  broadcast-box:
+    image: seaduboi/broadcast-box:latest
+    container_name: broadcast-box
+    network_mode: "host"
+    environment:
+      - HTTP_ADDRESS=:8080
+      - UDP_MUX_PORT=8080
+      - INCLUDE_LOOPBACK_CANDIDATE=true
+      - DEBUG_PRINT_OFFER=false
+      - DEBUG_PRINT_ANSWER=false
+    restart: always
+    volumes:
+      - ./configs/.env.production:/broadcast-box/.env.production:ro

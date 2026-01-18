@@ -1,0 +1,25 @@
+[Unit]
+Description=Gaming WebRTC Stream
+Requires=broadcast-box.service
+After=broadcast-box.service
+
+[Service]
+Type=simple
+User=streamer
+WorkingDirectory=/home/streamer/streaming
+Environment="STREAM_KEY=gaming"
+Environment="SERVER_URL=http://localhost:8080/api/whip"
+Environment="VIDEO_DEVICE=/dev/video0"
+ExecStart=/home/streamer/streaming/stream.sh
+Restart=always
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/streamer/streaming
+
+[Install]
+WantedBy=multi-user.target

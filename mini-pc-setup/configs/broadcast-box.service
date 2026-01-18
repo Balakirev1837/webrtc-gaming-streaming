@@ -1,0 +1,22 @@
+[Unit]
+Description=Broadcast Box WebRTC Server
+After=network.target
+Wants=docker.service
+
+[Service]
+Type=simple
+User=streamer
+WorkingDirectory=/home/streamer/broadcast-box
+ExecStart=/home/streamer/broadcast-box/broadcast-box
+Restart=always
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/streamer/broadcast-box
+
+[Install]
+WantedBy=multi-user.target
