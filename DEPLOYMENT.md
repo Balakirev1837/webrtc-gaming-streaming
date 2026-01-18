@@ -91,7 +91,7 @@ sudo journalctl -u optiplex-stream -f
 **For:** Maximum quality viewing
 
 **Configuration:**
-- Capture: 1440p@144Hz
+- Capture: At your native gaming resolution (e.g., 1080p@60Hz or 1440p@144Hz)
 - Output: 1080p@60fps
 - Codec: AV1 (software or hardware)
 - CPU: 70-80% (software) or 15-25% (hardware)
