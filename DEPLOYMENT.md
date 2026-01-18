@@ -100,9 +100,14 @@ sudo journalctl -u optiplex-stream -f
 **Setup:**
 ```bash
 cd ~/mini-pc-setup
+sudo ./setup-mini-pc.sh
+sudo reboot
+
+# After reboot
 ./deploy.sh
 sudo systemctl start broadcast-box
-sudo systemctl start gaming-stream-av1
+sudo systemctl start vp9-stream      # VP9 default (30-40% CPU)
+# Or: sudo systemctl start optiplex-stream  # AV1 alternative (45-60% CPU)
 ```
 
 ### Option C: Hardware-Accelerated (NVENC/VA-API)

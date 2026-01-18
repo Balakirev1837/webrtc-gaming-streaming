@@ -33,19 +33,20 @@ echo "[3/6] Copying configuration..."
 cp configs/.env.production "$PROJECT_DIR/.env.production"
 
 # Copy all streaming scripts
-echo "[4/6] Copying streaming scripts..."
+echo "[4/7] Copying streaming scripts..."
 cp scripts/stream*.sh "$STREAM_DIR/"
 chmod +x "$STREAM_DIR"/*.sh
-echo "  Copied AV1 and H.264 streaming scripts"
+echo "  Copied AV1, VP9, and H.264 streaming scripts"
 
 # Copy systemd services
-echo "[5/6] Installing systemd services..."
+echo "[5/7] Installing systemd services..."
 sudo cp configs/broadcast-box.service /etc/systemd/system/
+sudo cp configs/vp9-stream.service /etc/systemd/system/
 sudo cp configs/optiplex-stream.service /etc/systemd/system/
 sudo cp configs/gaming-stream-av1.service /etc/systemd/system/
 sudo systemctl daemon-reload
 
-echo "[6/6] Setup complete!"
+echo "[6/7] Setup complete!"
 
 echo
 echo "=== Deployment Complete ==="

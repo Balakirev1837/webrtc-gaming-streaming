@@ -51,7 +51,21 @@ STREAMING_SCRIPTS = {
         "script": "stream-av1-optiplex.sh",
         "type": "software",
         "codec": "AV1",
+        "recommended": False,
+    },
+    "vp9": {
+        "name": "VP9 (OptiPlex Default - 1440p→720p)",
+        "script": "stream-vp9.sh",
+        "type": "software",
+        "codec": "VP9",
         "recommended": True,
+    },
+    "av1-svt": {
+        "name": "AV1 (SVT-AV1 - Software)",
+        "script": "stream-av1-svt.sh",
+        "type": "software",
+        "codec": "AV1",
+        "recommended": False,
     },
     "av1-rav1e": {
         "name": "AV1 (RAV1E - Software)",
@@ -85,8 +99,8 @@ STREAMING_SCRIPTS = {
 
 # Default configuration
 DEFAULT_CONFIG = {
-    "selected_script": "av1-optiplex",
-    "bitrate": 4000,
+    "selected_script": "vp9",
+    "bitrate": 5000,
     "resolution": "1280x720",
     "fps": 60,
     "audio_bitrate": 192,
