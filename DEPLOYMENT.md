@@ -2,7 +2,17 @@
 
 Quick guide for deploying this streaming solution to your mini PC via Git.
 
+> **Note:** We now recommend the **Docker Deployment** method for better stability and easier setup. See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
+
 ## 🚀 Quick Deployment (5 Minutes)
+
+### Option 1: Docker (Recommended)
+See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for the full guide.
+1. Clone the repo.
+2. Run `docker-compose up -d --build` inside `docker-deployment/`.
+
+### Option 2: Manual (Legacy)
+Follow the steps below to deploy manually via scripts.
 
 ```bash
 # 1. Clone the repository

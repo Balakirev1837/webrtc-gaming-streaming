@@ -50,11 +50,13 @@ A complete, production-ready WebRTC streaming solution using:
 | **Hardware Comparison** | ~600 | ✅ Outstanding | Device analysis |
 | **Stream On/Off Guide** | ~200 | ✅ Good | Control features |
 | **Deployment Guide** | ~900 | ✅ Outstanding | Complete deployment steps |
+| **Docker Deployment** | ~100 | ✅ Outstanding | Containerized setup |
 
 ### Code Statistics
 
 | Metric | Count | Notes |
 |--------|-------|-------|
+| **Docker** | 2 | Compose + Dockerfile |
 | **Shell scripts** | 22 | Executable automation |
 | **Python files** | 1 | Flask backend |
 | **HTML files** | 2 | Viewer + control panel |
