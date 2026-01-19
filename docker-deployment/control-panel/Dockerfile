@@ -1,4 +1,4 @@
-FROM fedora:38
+FROM fedora:40
 
 # Install dependencies
 # We enable RPM Fusion free/nonfree to ensure we get all codecs if possible, 
