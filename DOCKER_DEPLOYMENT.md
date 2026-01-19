@@ -83,8 +83,16 @@ docker-compose logs -f broadcast-box
 
 ## 🔄 Updating
 
-To update the application:
+We have included a script to make updating easy and clean. This will pull the latest code, rebuild the containers, and remove old image layers to save disk space.
+
+```bash
+cd docker-deployment
+./update.sh
+```
+
+Alternatively, you can run the commands manually:
 ```bash
 git pull
-docker-compose up -d --build
+docker-compose up -d --build --remove-orphans
+docker image prune -f
 ```
