@@ -6,6 +6,29 @@
 
 **Repository:** https://github.com/Balakirev1837/webrtc-gaming-streaming
 
+## 🐳 Quick Start (Docker Deployment) - Recommended
+
+**The easiest and most stable way to run the project.**
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Balakirev1837/webrtc-gaming-streaming.git
+   cd webrtc-gaming-streaming/docker-deployment
+   ```
+
+2. **Start the services:**
+   ```bash
+   docker-compose up -d --build
+   ```
+
+3. **Access:**
+   - Stream: `http://mini-pc-ip:8080/gaming`
+   - Control Panel: `http://mini-pc-ip:8081`
+
+See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for full details.
+
+---
+
 ## 🚀 Quick Start (Git Deployment)
 
 Clone this repo and deploy to your mini PC in 5 minutes:
