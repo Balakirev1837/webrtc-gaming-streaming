@@ -19,6 +19,7 @@ services:
     depends_on:
       - broadcast-box
     environment:
+      # Audio: PulseAudio socket is mounted from host
       - PULSE_SERVER=unix:/run/user/1000/pulse/native
       - SERVER_URL=http://localhost:8080/api/whip
     volumes:

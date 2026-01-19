@@ -44,7 +44,8 @@ RUN chmod +x /app/scripts/*.sh
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
-ENV SERVER_URL=http://broadcast-box:8080/api/whip
+# Since we use network_mode: "host", we point to localhost
+ENV SERVER_URL=http://localhost:8080/api/whip
 
 # Expose control panel port
 EXPOSE 8081

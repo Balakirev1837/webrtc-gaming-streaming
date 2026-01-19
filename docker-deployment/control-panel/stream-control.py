@@ -173,6 +173,7 @@ def get_stream_status():
     stream_info = None
     try:
         # Check if broadcast-box is reachable
+        # Since we use network_mode: "host", we access via localhost
         result = subprocess.run(
             ["curl", "-s", "http://localhost:8080/api/status"],
             capture_output=True,

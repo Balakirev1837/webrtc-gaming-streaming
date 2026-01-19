@@ -52,19 +52,24 @@ This guide describes how to deploy the WebRTC Gaming Streaming solution using Do
 Configuration is persisted in the `config/` directory within `docker-deployment`.
 
 - **Stream Config:** `config/stream_config.json` (Managed via Control Panel)
-- **PulseAudio:** The container mounts the host's PulseAudio socket. Ensure your host user is logged in (for audio) or PulseAudio is running as a system service.
+- **PulseAudio:** The container mounts the host's PulseAudio socket. 
+  - **Important:** The `docker-compose.yml` assumes the host user ID is `1000`. If your user ID is different (check with `id -u`), update the volumes section in `docker-compose.yml`.
+  - Also ensure the `~/.config/pulse/cookie` exists on the host.
 
 ### Environment Variables
 You can modify `docker-compose.yml` to adjust environment variables:
 
-- `SERVER_URL`: URL of the Broadcast Box WHIP endpoint (default: `http://localhost:8080/api/whip`)
-- `PULSE_SERVER`: Path to PulseAudio socket (default: `unix:/run/user/1000/pulse/native`)
+- `SERVER_URL`: URL of the Broadcast Box WHIP endpoint. Since we use host networking, this is usually `http://localhost:8080/api/whip`.
+- `PULSE_SERVER`: Path to PulseAudio socket (default: `unix:/run/user/1000/pulse/native`).
 
 ## 🛠️ Troubleshooting
 
 **Audio issues:**
-If audio isn't working, check the PulseAudio socket mapping in `docker-compose.yml`. You may need to adjust the user ID (1000) to match your user (`id -u`).
-Also ensure the cookie file exists at `~/.config/pulse/cookie`.
+If audio isn't working:
+1. Check your User ID on the host: `id -u`.
+2. If it's not `1000`, update `docker-compose.yml` volumes: `- /run/user/<YOUR_ID>/pulse:/run/user/1000/pulse`.
+3. Check if the PulseAudio cookie exists: `ls -l ~/.config/pulse/cookie`.
+4. Ensure you are running `docker-compose` as a user who can read that cookie (or use `sudo -E docker-compose ...` to preserve environment, though editing the file is safer).
 
 **Video devices:**
 The container runs in `privileged` mode with `/dev` mapped to ensure access to capture cards and hardware encoders (VA-API/NVENC). If your capture card isn't found, check `ls -l /dev/video*` on the host.
