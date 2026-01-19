@@ -486,6 +486,7 @@
             statsInterval = setInterval(() => {
                 updateStats();
                 updateStatus();
+                updateLogs();
             }, 2000);
 
             // Update stream URL
@@ -722,6 +723,29 @@
 
             } catch (error) {
                 console.error('Failed to update status:', error);
+            }
+        }
+
+        async function updateLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                const logSection = document.getElementById('logSection');
+                
+                // Clear and rebuild logs (simple approach)
+                logSection.innerHTML = '';
+                data.logs.forEach(line => {
+                    const div = document.createElement('div');
+                    div.className = 'log-entry';
+                    div.style.fontSize = '11px';
+                    div.textContent = line;
+                    logSection.appendChild(div);
+                });
+                
+                // Auto-scroll to bottom
+                logSection.scrollTop = logSection.scrollHeight;
+            } catch (error) {
+                console.error('Failed to update logs:', error);
             }
         }
 

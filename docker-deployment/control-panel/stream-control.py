@@ -17,11 +17,15 @@ app = Flask(__name__)
 # Configuration
 STREAM_DIR = Path("/app/scripts")
 CONFIG_DIR = Path("/app/config")
+LOG_DIR = Path("/app/logs")
 CONFIG_FILE = CONFIG_DIR / "stream_config.json"
 PID_FILE = CONFIG_DIR / "stream.pid"
+LOG_FILE = LOG_DIR / "stream.log"
 
 # Ensure directories exist
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Optimize for CPU efficiency
 STATS_POLL_INTERVAL = 5
@@ -243,13 +247,16 @@ def start_stream(script_id, config):
         env["BITRATE"] = str(config["bitrate"])
         env["FPS"] = str(config["fps"])
 
+        # Open log file
+        log_fd = open(LOG_FILE, "w")
+
         # Start process
         process = subprocess.Popen(
             [str(script_path)],
             env=env,
             cwd=str(STREAM_DIR),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=log_fd,
+            stderr=subprocess.STDOUT,  # Capture stderr to log file too
             start_new_session=True,
         )
 
@@ -372,6 +379,19 @@ def api_toggle_stream():
 @app.route("/api/scripts")
 def api_scripts():
     return jsonify({"scripts": STREAMING_SCRIPTS, "supported": detect_av1_support()})
+
+
+@app.route("/api/logs")
+def api_logs():
+    """API: Get recent logs"""
+    try:
+        if LOG_FILE.exists():
+            # Read last 50 lines
+            lines = LOG_FILE.read_text().splitlines()[-50:]
+            return jsonify({"logs": lines})
+        return jsonify({"logs": ["No logs available yet."]})
+    except Exception as e:
+        return jsonify({"logs": [f"Error reading logs: {str(e)}"]})
 
 
 if __name__ == "__main__":
