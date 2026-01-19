@@ -90,9 +90,15 @@ cd docker-deployment
 ./update.sh
 ```
 
+**Note:** If you made manual changes or want to force a full rebuild, run:
+```bash
+./update.sh --force
+```
+
 Alternatively, you can run the commands manually:
 ```bash
 git pull
-docker-compose up -d --build --remove-orphans
+docker-compose pull
+docker-compose up -d --build --force-recreate --remove-orphans
 docker image prune -f
 ```
