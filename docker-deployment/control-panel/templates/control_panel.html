@@ -659,7 +659,6 @@
                 if (data.success) {
                     addLog('Stream toggled successfully!');
                     await updateStatus();
-                    updateStreamButton();
                 } else {
                     addLog(`Failed to toggle: ${data.error}`, 'error');
                 }
@@ -668,21 +667,7 @@
             }
         }
 
-        function updateStreamButton() {
-            const status = getStreamStatus();
-            const button = document.getElementById('toggleBtn');
-            const text = document.getElementById('toggleBtnText');
 
-            fetch('/api/status').then(response => response.json()).then(status => {
-                if (status.streaming) {
-                    button.className = 'btn btn-danger';
-                    text.textContent = '⏹️ Stop Stream';
-                } else {
-                    button.className = 'btn btn-primary';
-                    text.textContent = '▶️ Start Stream';
-                }
-            });
-        }
 
         async function updateStats() {
             try {
