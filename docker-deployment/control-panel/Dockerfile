@@ -19,7 +19,16 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
     procps-ng \
     pulseaudio-utils \
     curl \
+    cargo rust \
+    openssl-devel \
+    gstreamer1-devel \
+    gstreamer1-plugins-base-devel \
     && dnf clean all
+
+# Build whipsink (needed for WHIP streaming)
+# We install it to /usr/lib64/gstreamer-1.0/
+RUN cargo install --locked --git https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git --package gst-plugin-whip --root /usr \
+    && mv /usr/lib/libgstwhip.so /usr/lib64/gstreamer-1.0/ || mv /usr/lib64/libgstwhip.so /usr/lib64/gstreamer-1.0/ || true
 
 # Install Python deps
 RUN pip3 install flask psutil
