@@ -9,7 +9,7 @@ Quick guide for deploying this streaming solution to your mini PC via Git.
 ### Option 1: Docker (Recommended)
 See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for the full guide.
 1. Clone the repo.
-2. Run `docker-compose up -d --build` inside `docker-deployment/`.
+2. Run `docker compose up -d --build` inside `docker-deployment/`.
 
 ### Option 2: Manual (Legacy)
 Follow the steps below to deploy manually via scripts.

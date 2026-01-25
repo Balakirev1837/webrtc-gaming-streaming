@@ -39,13 +39,13 @@ if [ "$LOCAL" != "$REMOTE" ] || [ $FORCE -eq 1 ]; then
     
     echo "📥 Pulling latest external images (Broadcast Box)..."
     # Essential to ensure the base images and external services are up to date
-    docker-compose pull
+    docker compose pull
     
     echo "🏗️  Rebuilding and restarting containers..."
     # --build: Rebuild the local streamer image
     # --force-recreate: Stop and recreate containers to ensure no stale state remains
     # --remove-orphans: Remove containers for services that were removed from docker-compose.yml
-    docker-compose up -d --build --force-recreate --remove-orphans
+    docker compose up -d --build --force-recreate --remove-orphans
     
     echo "🧹 Cleaning up..."
     # Prune dangling images to save space (important for mini PCs)

@@ -13,7 +13,7 @@ This guide describes how to deploy the WebRTC Gaming Streaming solution using Do
    ```bash
    # Ubuntu (Recommended for Mini PC)
    sudo apt update
-   sudo apt install -y docker.io docker-compose
+   sudo apt install -y docker.io docker-compose-v2
    sudo usermod -aG docker $USER
    ```
 
@@ -38,7 +38,7 @@ This guide describes how to deploy the WebRTC Gaming Streaming solution using Do
 
 3. **Start the services**:
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
    ```
 
    This will:
@@ -72,7 +72,7 @@ If audio isn't working:
 1. Check your User ID on the host: `id -u`.
 2. If it's not `1000`, update `docker-compose.yml` volumes: `- /run/user/<YOUR_ID>/pulse:/run/user/1000/pulse`.
 3. Check if the PulseAudio cookie exists: `ls -l ~/.config/pulse/cookie`.
-4. Ensure you are running `docker-compose` as a user who can read that cookie (or use `sudo -E docker-compose ...` to preserve environment, though editing the file is safer).
+4. Ensure you are running `docker compose` as a user who can read that cookie (or use `sudo -E docker compose ...` to preserve environment, though editing the file is safer).
 
 **Video devices:**
 The container runs in `privileged` mode with `/dev` mapped to ensure access to capture cards and hardware encoders (VA-API/NVENC). If your capture card isn't found, check `ls -l /dev/video*` on the host.
@@ -80,8 +80,8 @@ The container runs in `privileged` mode with `/dev` mapped to ensure access to c
 **Logs:**
 View logs for troubleshooting:
 ```bash
-docker-compose logs -f streamer
-docker-compose logs -f broadcast-box
+docker compose logs -f streamer
+docker compose logs -f broadcast-box
 ```
 
 ## 🔄 Updating
@@ -101,7 +101,7 @@ cd docker-deployment
 Alternatively, you can run the commands manually:
 ```bash
 git pull
-docker-compose pull
-docker-compose up -d --build --force-recreate --remove-orphans
+docker compose pull
+docker compose up -d --build --force-recreate --remove-orphans
 docker image prune -f
 ```
