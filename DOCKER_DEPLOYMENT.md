@@ -4,23 +4,26 @@ This guide describes how to deploy the WebRTC Gaming Streaming solution using Do
 
 ## 🚀 Quick Start with Docker
 
-### Prerequisites
+**Target Environment:**
+*   **Dev Machine:** Any (e.g., Fedora)
+*   **Streaming Server (Mini PC):** Ubuntu (Recommended) or Fedora
+
+### Prerequisites (On Ubuntu Mini PC)
 1. **Docker & Docker Compose** installed on your mini PC.
    ```bash
-   # Fedora
-   sudo dnf install -y docker docker-compose
-   sudo systemctl enable --now docker
-   
-   # Ubuntu
+   # Ubuntu (Recommended for Mini PC)
+   sudo apt update
    sudo apt install -y docker.io docker-compose
-   ```
-2. **User Permissions**: Ensure your user is in the `docker` and `video` groups.
-   ```bash
-   sudo usermod -aG docker,video $USER
-   newgrp docker
+   sudo usermod -aG docker $USER
    ```
 
-### Deployment Steps
+2. **User Permissions**: Ensure your user is in the `video` group to access the capture card.
+   ```bash
+   sudo usermod -aG video $USER
+   # Logout and login again for changes to take effect
+   ```
+
+### Deployment Steps (On Mini PC)
 
 1. **Clone the repository** (if you haven't already):
    ```bash
