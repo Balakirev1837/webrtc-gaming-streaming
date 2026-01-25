@@ -13,7 +13,7 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
     gstreamer1-plugins-bad-free gstreamer1-plugins-bad-free-extras \
     gstreamer1-plugins-ugly gstreamer1-libav \
     gstreamer1-vaapi \
-    svt-av1-tools \
+    svt-av1 \
     rav1e \
     v4l-utils ffmpeg \
     procps-ng \
