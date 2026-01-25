@@ -82,7 +82,7 @@ gst-launch-1.0 \
   ! 'audio/x-raw,rate=48000,channels=2' \
   ! queue max-size-buffers=1 max-size-time=0 max-size-bytes=65536 leaky=1 \
   ! opusenc bitrate=192000 \
-      application=audio \
+      audio-type=generic \
       frame-size=20 \
       inband-fec=false \
       complexity=8 \
