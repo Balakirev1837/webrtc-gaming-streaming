@@ -21,12 +21,17 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
     curl \
     git \
     gcc \
-    cargo rust \
+    pkgconf-pkg-config \
     openssl-devel \
+    libnice-devel \
     gstreamer1-devel \
     gstreamer1-plugins-base-devel \
     gstreamer1-plugins-bad-free-devel \
     && dnf clean all
+
+# Install Rust via rustup (Fedora's rust is too old for gst-plugins-rs)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Build whipsink (needed for WHIP streaming)
 # The element 'whipsink' is part of the gst-plugin-webrtchttp package
