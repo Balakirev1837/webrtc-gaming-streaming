@@ -30,7 +30,8 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 
 # Build whipsink (needed for WHIP streaming)
 # The element 'whipsink' is part of the gst-plugin-webrtchttp package
-RUN git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
+RUN rustc --version && cargo --version && \
+    git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
     cd /tmp/gst-plugins-rs && \
     # Build release version of the shared library
     cargo build --release --package gst-plugin-webrtchttp && \
