@@ -19,16 +19,25 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
     procps-ng \
     pulseaudio-utils \
     curl \
+    git \
+    gcc \
     cargo rust \
     openssl-devel \
     gstreamer1-devel \
     gstreamer1-plugins-base-devel \
+    gstreamer1-plugins-bad-free-devel \
     && dnf clean all
 
 # Build whipsink (needed for WHIP streaming)
-# We install it to /usr/lib64/gstreamer-1.0/
-RUN cargo install --locked --git https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git --package gst-plugin-whip --root /usr \
-    && mv /usr/lib/libgstwhip.so /usr/lib64/gstreamer-1.0/ || mv /usr/lib64/libgstwhip.so /usr/lib64/gstreamer-1.0/ || true
+# The element 'whipsink' is part of the gst-plugin-webrtchttp package
+RUN git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
+    cd /tmp/gst-plugins-rs && \
+    # Build release version of the shared library
+    cargo build --release --package gst-plugin-webrtchttp && \
+    # Install the plugin to the system GStreamer directory
+    cp target/release/libgstwebrtchttp.so /usr/lib64/gstreamer-1.0/ && \
+    # Cleanup to keep image small
+    cd / && rm -rf /tmp/gst-plugins-rs
 
 # Install Python deps
 RUN pip3 install flask psutil
