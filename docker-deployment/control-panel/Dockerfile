@@ -1,44 +1,8 @@
-# =============================================================================
-# Stage 1: Builder - Compile gst-plugin-webrtc
-# =============================================================================
-FROM fedora:40 AS builder
+# Single-stage Dockerfile for WebRTC Gaming Streaming
+# Uses standard GStreamer packages with whipclientsink (stable)
+FROM fedora:40
 
-# Install build dependencies
-RUN dnf install -y 'dnf-command(config-manager)' && \
-    dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
-    dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
-    dnf update -y && \
-    dnf install -y \
-    gcc gcc-c++ \
-    cargo rust \
-    pkgconf-pkg-config \
-    openssl-devel \
-    libnice-devel \
-    gstreamer1-devel \
-    gstreamer1-plugins-base-devel \
-    gstreamer1-plugins-bad-free-devel \
-    git \
-    && dnf clean all
-
-# Install Rust via rustup
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Clone and build gst-plugin-webrtc
-# Exit on any error to catch build failures
-RUN set -e && \
-    cargo --version && rustc --version && \
-    git clone --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
-    cd /tmp/gst-plugins-rs && \
-    cargo build --release --package gst-plugin-webrtc && \
-    ls -lh target/release/libgstwebrtc.so && \
-    echo "Build successful"
-
-# Create app directory
-WORKDIR /app
-RUN mkdir -p /app/scripts /app/config /app/templates /app/logs
-
-# Install runtime dependencies only
+# Install runtime dependencies
 RUN dnf install -y 'dnf-command(config-manager)' && \
     dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
     dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
