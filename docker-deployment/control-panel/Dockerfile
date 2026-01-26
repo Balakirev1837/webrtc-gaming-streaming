@@ -33,15 +33,15 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Build whipclientsink (part of gst-plugin-webrtc)
-# gst-plugin-webrtchttp is deprecated
+# Build whipsink (needed for WHIP streaming)
+# The element 'whipsink' is part of the deprecated gst-plugin-webrtchttp package
 RUN rustc --version && cargo --version && \
     git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
     cd /tmp/gst-plugins-rs && \
     # Build release version of the shared library
-    cargo build --release --package gst-plugin-webrtc && \
+    cargo build --release --package gst-plugin-webrtchttp && \
     # Install the plugin to the system GStreamer directory
-    cp target/release/libgstwebrtc.so /usr/lib64/gstreamer-1.0/ && \
+    cp target/release/libgstwebrtchttp.so /usr/lib64/gstreamer-1.0/ && \
     # Cleanup to keep image small
     cd / && rm -rf /tmp/gst-plugins-rs
 
@@ -68,6 +68,11 @@ RUN chmod +x /app/scripts/*.sh
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
+ENV GST_DEBUG=no
+ENV GST_DEBUG_NO_COLOR=1
+ENV SVT_AV1_THREADS=4
+ENV SVT_AV1_TILES=2x1
+ENV SVT_AV1_TIER=1
 # Since we use network_mode: "host", we point to localhost
 ENV SERVER_URL=http://localhost:8080/api/whip
 
