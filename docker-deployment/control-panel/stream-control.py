@@ -46,28 +46,16 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 STATS_POLL_INTERVAL = 5
 STATUS_POLL_INTERVAL = 5
 
-# Streaming scripts
+# Streaming scripts (filtered for target hardware)
+# For low-power OptiPlex: Only show VP9, AV1 OptiPlex, and hardware encoders
 STREAMING_SCRIPTS = {
-    "av1-nvenc": {
-        "name": "AV1 (NVENC - RTX 40-series)",
-        "script": "stream-av1-nvenc.sh",
-        "type": "hardware",
-        "codec": "AV1",
-        "recommended": False,
-    },
-    "av1-vaapi": {
-        "name": "AV1 (VA-API - Intel Arc/AMD RDNA3)",
-        "script": "stream-av1-vaapi.sh",
-        "type": "hardware",
-        "codec": "AV1",
-        "recommended": False,
-    },
-    "av1-svt": {
-        "name": "AV1 (SVT-AV1 - Software)",
-        "script": "stream-av1-svt.sh",
+    "vp9": {
+        "name": "VP9 (OptiPlex Default - 1440p→720p)",
+        "script": "stream-vp9.sh",
         "type": "software",
-        "codec": "AV1",
-        "recommended": False,
+        "codec": "VP9",
+        "recommended": True,
+        "target": "low-power",
     },
     "av1-optiplex": {
         "name": "AV1 (OptiPlex - 1440p→720p)",
@@ -75,27 +63,7 @@ STREAMING_SCRIPTS = {
         "type": "software",
         "codec": "AV1",
         "recommended": False,
-    },
-    "vp9": {
-        "name": "VP9 (OptiPlex Default - 1440p→720p)",
-        "script": "stream-vp9.sh",
-        "type": "software",
-        "codec": "VP9",
-        "recommended": True,
-    },
-    "av1-rav1e": {
-        "name": "AV1 (RAV1E - Software)",
-        "script": "stream-av1.sh",
-        "type": "software",
-        "codec": "AV1",
-        "recommended": False,
-    },
-    "downscale-av1": {
-        "name": "AV1 (1440p@144Hz → 1080p@60Hz)",
-        "script": "stream-1080p-downscale.sh",
-        "type": "software",
-        "codec": "AV1",
-        "recommended": False,
+        "target": "low-power",
     },
     "h264-vaapi": {
         "name": "H.264 (VA-API - Intel/AMD)",
@@ -103,6 +71,15 @@ STREAMING_SCRIPTS = {
         "type": "hardware",
         "codec": "H.264",
         "recommended": False,
+        "target": "hardware",
+    },
+    "av1-vaapi": {
+        "name": "AV1 (VA-API - Intel Arc/AMD RDNA3)",
+        "script": "stream-av1-vaapi.sh",
+        "type": "hardware",
+        "codec": "AV1",
+        "recommended": False,
+        "target": "hardware",
     },
     "h264-nvenc": {
         "name": "H.264 (NVENC - NVIDIA)",
@@ -110,6 +87,15 @@ STREAMING_SCRIPTS = {
         "type": "hardware",
         "codec": "H.264",
         "recommended": False,
+        "target": "hardware",
+    },
+    "av1-nvenc": {
+        "name": "AV1 (NVENC - RTX 40-series)",
+        "script": "stream-av1-nvenc.sh",
+        "type": "hardware",
+        "codec": "AV1",
+        "recommended": False,
+        "target": "hardware",
     },
 }
 
@@ -339,12 +325,21 @@ def index():
     stats = get_system_stats()
     status = get_stream_status()
     supported_scripts = detect_av1_support()
+
+    # Filter scripts for low-power hardware (OptiPlex/mini-pc)
+    # Only show: VP9, AV1 OptiPlex, and hardware encoders
+    filtered_scripts = {}
+    for script_id, script_info in STREAMING_SCRIPTS.items():
+        # For low-power target: show all scripts
+        # Scripts marked with "target": "low-power" are optimized for OptiPlex
+        filtered_scripts[script_id] = script_info
+
     return render_template(
         "control_panel.html",
         config=config,
         stats=stats,
         status=status,
-        scripts=STREAMING_SCRIPTS,
+        scripts=filtered_scripts,
         supported_scripts=supported_scripts,
     )
 
@@ -401,7 +396,11 @@ def api_toggle_stream():
 
 @app.route("/api/scripts")
 def api_scripts():
-    return jsonify({"scripts": STREAMING_SCRIPTS, "supported": detect_av1_support()})
+    # Filter scripts for low-power hardware (OptiPlex/mini-pc)
+    filtered_scripts = {}
+    for script_id, script_info in STREAMING_SCRIPTS.items():
+        filtered_scripts[script_id] = script_info
+    return jsonify({"scripts": filtered_scripts, "supported": detect_av1_support()})
 
 
 @app.route("/api/logs")
