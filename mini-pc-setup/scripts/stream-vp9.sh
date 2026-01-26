@@ -38,7 +38,7 @@ if ! curl -s --connect-timeout 3 "$SERVER_URL" > /dev/null 2>&1; then
 fi
 
 # Check for required GStreamer plugins
-REQUIRED_PLUGINS="v4l2src vp9enc rtpvp9pay whipsink pulsesrc opusenc rtpopuspay"
+REQUIRED_PLUGINS="v4l2src vp9enc rtpvp9pay whipclientsink pulsesrc opusenc rtpopuspay"
 for plugin in $REQUIRED_PLUGINS; do
     if ! gst-inspect-1.0 "$plugin" > /dev/null 2>&1; then
         echo "ERROR: Missing GStreamer plugin: $plugin"
@@ -85,7 +85,7 @@ gst-launch-1.0 \
   ! application/x-rtp,media=audio,encoding-name=OPUS,payload=97,clock-rate=48000 \
   ! whip0.sink_1 \
   \
-  whipsink name=whip0 \
-    use-link-headers=true \
-    whip-endpoint="$SERVER_URL" \
-    auth-token="$STREAM_KEY"
+  whipclientsink name=whip0 \
+     \
+    signaller::signaller::whip-endpoint="$SERVER_URL" \
+    signaller::auth-token="$STREAM_KEY"

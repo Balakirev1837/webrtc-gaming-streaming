@@ -29,7 +29,7 @@ gst-launch-1.0 \
   ! h264parse \
   ! rtph264pay config-interval=1 pt=96 \
   ! application/x-rtp,media=video,encoding-name=H264,payload=96,clock-rate=90000 \
-  ! whip0.sink_0 \
+  ! whip0. \
   \
   pulsesrc \
   ! audioconvert \
@@ -40,7 +40,7 @@ gst-launch-1.0 \
   ! application/x-rtp,media=audio,encoding-name=OPUS,payload=96,clock-rate=48000 \
   ! whip0.sink_1 \
   \
-  whipsink name=whip0 \
-    use-link-headers=true \
-    whip-endpoint="$SERVER_URL" \
-    auth-token="$STREAM_KEY"
+  whipclientsink name=whip0 \
+     \
+    signaller::signaller::whip-endpoint="$SERVER_URL" \
+    signaller::auth-token="$STREAM_KEY"

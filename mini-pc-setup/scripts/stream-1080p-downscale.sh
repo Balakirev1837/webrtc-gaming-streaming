@@ -51,7 +51,7 @@ gst-launch-1.0 \
   ! application/x-rtp,media=audio,encoding-name=OPUS,payload=97,clock-rate=48000 \
   ! whip0.sink_1 \
   \
-  whipsink name=whip0 \
-    use-link-headers=true \
-    whip-endpoint="$SERVER_URL" \
-    auth-token="$STREAM_KEY"
+  whipclientsink name=whip0 \
+     \
+    signaller::signaller::whip-endpoint="$SERVER_URL" \
+    signaller::auth-token="$STREAM_KEY"
