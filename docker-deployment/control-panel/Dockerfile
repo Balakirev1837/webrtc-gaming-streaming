@@ -25,11 +25,12 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Clone and build gst-plugin-webrtc
-RUN cargo --version && rustc --version && \
+# Exit on any error to catch build failures
+RUN set -e && \
+    cargo --version && rustc --version && \
     git clone --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
     cd /tmp/gst-plugins-rs && \
     cargo build --release --package gst-plugin-webrtc && \
-    # Verify build succeeded and check for library
     ls -lh target/release/libgstwebrtc.so && \
     echo "Build successful"
 
