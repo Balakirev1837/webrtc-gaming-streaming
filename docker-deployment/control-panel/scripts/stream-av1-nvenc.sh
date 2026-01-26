@@ -5,6 +5,10 @@ STREAM_KEY="${STREAM_KEY:-gaming}"
 SERVER_URL="${SERVER_URL:-http://localhost:8080/api/whip}"
 VIDEO_DEVICE="${VIDEO_DEVICE:-/dev/video0}"
 
+# Source queue configuration
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/queue-config.sh"
+
 echo "=== Starting AV1 WebRTC Stream (NVENC Hardware) ==="
 echo "Stream Key: $STREAM_KEY"
 echo "Server: $SERVER_URL"
@@ -20,7 +24,7 @@ gst-launch-1.0 \
   ! video/x-raw,width=1920,height=1080,framerate=60/1 \
   ! videoconvert \
   ! 'video/x-raw,format=NV12' \
-  ! queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 \
+  ! $QUEUE_VIDEO_MID_RES \
   ! nvav1enc \
       preset=p4 \
       rc-mode=cbr \
@@ -29,6 +33,7 @@ gst-launch-1.0 \
       tune=ll \
   ! av1parse \
   ! rtpav1pay \
+  ! $QUEUE_RTP \
   ! application/x-rtp,media=video,encoding-name=AV1,payload=96,clock-rate=90000 \
   ! whip0. \
   \
@@ -36,9 +41,10 @@ gst-launch-1.0 \
   ! audioconvert \
   ! audioresample \
   ! 'audio/x-raw,rate=48000,channels=2' \
-  ! queue max-size-buffers=0 max-size-time=0 max-size-bytes=0 \
+  ! $QUEUE_AUDIO \
   ! opusenc bitrate=192000 \
   ! rtpopuspay \
+  ! $QUEUE_RTP \
   ! application/x-rtp,media=audio,encoding-name=OPUS,payload=97,clock-rate=48000 \
   ! whip0.sink_1 \
   \

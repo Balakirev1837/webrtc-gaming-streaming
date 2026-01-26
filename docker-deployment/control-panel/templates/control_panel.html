@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stream Control Panel</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -474,23 +475,30 @@
     <script>
         let selectedScript = null;
         let config = {};
-        let statsInterval = null;
+        let logEventSource = null;
 
         // Load initial data
         async function init() {
             await loadScripts();
             await loadConfig();
             await updateStatus();
-            
-            // Start polling
-            statsInterval = setInterval(() => {
-                updateStats();
-                updateStatus();
-                updateLogs();
-            }, 1000);
+
+            // Setup SocketIO for stats/status updates
+            const socket = io();
+
+            socket.on('combined_update', (data) => {
+                updateStatsDisplay(data.stats);
+                updateStatusDisplay(data.status);
+            });
+
+            // Setup SSE for logs
+            logEventSource = new EventSource('/api/logs/stream');
+            logEventSource.onmessage = function(event) {
+                appendLogLine(event.data);
+            };
 
             // Update stream URL
-            document.getElementById('streamUrl').textContent = 
+            document.getElementById('streamUrl').textContent =
                 `http://${window.location.hostname}:8080/${config.stream_key || 'gaming'}`;
         }
 
@@ -670,93 +678,87 @@
 
 
 
-        async function updateStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const stats = await response.json();
+        function updateStatsDisplay(stats) {
+            document.getElementById('cpuUsage').textContent = `${stats.cpu.toFixed(0)}%`;
+            document.getElementById('cpuUsage').className =
+                `status-value ${stats.cpu > 80 ? 'error' : stats.cpu > 60 ? 'warning' : 'good'}`;
 
-                document.getElementById('cpuUsage').textContent = `${stats.cpu.toFixed(0)}%`;
-                document.getElementById('cpuUsage').className = 
-                    `status-value ${stats.cpu > 80 ? 'error' : stats.cpu > 60 ? 'warning' : 'good'}`;
-                
-                document.getElementById('memoryUsage').textContent = `${stats.memory.toFixed(0)}%`;
-                document.getElementById('memoryUsage').className = 
-                    `status-value ${stats.memory > 80 ? 'error' : stats.memory > 60 ? 'warning' : 'good'}`;
+            document.getElementById('memoryUsage').textContent = `${stats.memory.toFixed(0)}%`;
+            document.getElementById('memoryUsage').className =
+                `status-value ${stats.memory > 80 ? 'error' : stats.memory > 60 ? 'warning' : 'good'}`;
 
-                if (stats.gpu) {
-                    document.getElementById('gpuUsage').textContent = 
-                        `${stats.gpu.name} (${stats.gpu.utilization}%)`;
-                }
-            } catch (error) {
-                console.error('Failed to update stats:', error);
+            if (stats.gpu) {
+                document.getElementById('gpuUsage').textContent =
+                    `${stats.gpu.name} (${stats.gpu.utilization}%)`;
             }
         }
 
+        function updateStatusDisplay(status) {
+            const streamEl = document.getElementById('streamStatus');
+            const boxEl = document.getElementById('broadcastBoxStatus');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const toggleBtnText = document.getElementById('toggleBtnText');
+            const restartBtn = document.getElementById('restartBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            streamEl.textContent = status.streaming ? 'Active' : 'Inactive';
+            streamEl.className = `status-value ${status.streaming ? 'active' : 'inactive'}`;
+
+            boxEl.textContent = status.broadcast_box ? 'Running' : 'Stopped';
+            boxEl.className = `status-value ${status.broadcast_box ? 'active' : 'inactive'}`;
+
+            if (status.streaming) {
+                toggleBtn.className = 'btn btn-danger';
+                toggleBtnText.textContent = '⏹️ Stop Stream';
+            } else {
+                toggleBtn.className = 'btn btn-primary';
+                toggleBtnText.textContent = '▶️ Start Stream';
+            }
+
+            restartBtn.disabled = !status.streaming;
+            stopBtn.disabled = !status.streaming;
+        }
+
+        // Initial status update for button states
         async function updateStatus() {
             try {
                 const response = await fetch('/api/status');
                 const status = await response.json();
-
-                const streamEl = document.getElementById('streamStatus');
-                const boxEl = document.getElementById('broadcastBoxStatus');
-                const toggleBtn = document.getElementById('toggleBtn');
-                const toggleBtnText = document.getElementById('toggleBtnText');
-                const restartBtn = document.getElementById('restartBtn');
-                const stopBtn = document.getElementById('stopBtn');
-
-                streamEl.textContent = status.streaming ? 'Active' : 'Inactive';
-                streamEl.className = `status-value ${status.streaming ? 'active' : 'inactive'}`;
-
-                boxEl.textContent = status.broadcast_box ? 'Running' : 'Stopped';
-                boxEl.className = `status-value ${status.broadcast_box ? 'active' : 'inactive'}`;
-
-                if (status.streaming) {
-                    toggleBtn.className = 'btn btn-danger';
-                    toggleBtnText.textContent = '⏹️ Stop Stream';
-                } else {
-                    toggleBtn.className = 'btn btn-primary';
-                    toggleBtnText.textContent = '▶️ Start Stream';
-                }
-
-                restartBtn.disabled = !status.streaming;
-                stopBtn.disabled = !status.streaming;
-
+                updateStatusDisplay(status);
             } catch (error) {
                 console.error('Failed to update status:', error);
             }
         }
 
-        async function updateLogs() {
-            try {
-                const response = await fetch('/api/logs');
-                const data = await response.json();
-                const logSection = document.getElementById('logSection');
-                
-                // Clear and rebuild logs (simple approach)
-                logSection.innerHTML = '';
-                data.logs.forEach(line => {
-                    const div = document.createElement('div');
-                    div.className = 'log-entry';
-                    div.style.fontSize = '11px';
-                    div.textContent = line;
-                    logSection.appendChild(div);
-                });
-                
-                // Auto-scroll to bottom
-                logSection.scrollTop = logSection.scrollHeight;
-            } catch (error) {
-                console.error('Failed to update logs:', error);
+        function appendLogLine(line) {
+            const logSection = document.getElementById('logSection');
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.style.fontSize = '11px';
+            div.textContent = line;
+
+            // Keep only last 50 lines in DOM
+            while (logSection.children.length >= 50) {
+                logSection.removeChild(logSection.firstChild);
             }
+
+            logSection.appendChild(div);
+            logSection.scrollTop = logSection.scrollHeight;
         }
 
         function addLog(message, type = 'info') {
             const logSection = document.getElementById('logSection');
             const entry = document.createElement('div');
             entry.className = `log-entry ${type}`;
-            
+
             const time = new Date().toLocaleTimeString();
             entry.textContent = `[${time}] ${message}`;
-            
+
+            // Keep only last 50 lines in DOM
+            while (logSection.children.length >= 50) {
+                logSection.removeChild(logSection.firstChild);
+            }
+
             logSection.appendChild(entry);
             logSection.scrollTop = logSection.scrollHeight;
         }

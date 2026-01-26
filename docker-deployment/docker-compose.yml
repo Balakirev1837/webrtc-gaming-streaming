@@ -13,20 +13,43 @@ services:
     build: ./control-panel
     container_name: gaming-streamer
     network_mode: "host"
-    privileged: true  # Simplifies hardware access (GPU, capture cards)
+    # Remove privileged mode - use specific capabilities instead
+    # privileged: true
+    # Add specific capabilities
+    cap_add:
+      - SYS_RAWIO  # For capture card access
+    cap_drop:
+      - ALL  # Drop all other capabilities for security
+    security_opt:
+      - no-new-privileges:true  # Prevent privilege escalation
+    devices:
+      # Only map specific video devices, not entire /dev
+      - /dev/video0:/dev/video0:rwm
+      - /dev/snd:/dev/snd:rwm  # For audio
     depends_on:
       - broadcast-box
     environment:
-      # Audio: PulseAudio socket is mounted from host
       - PULSE_SERVER=unix:/run/user/1000/pulse/native
       - SERVER_URL=http://localhost:8080/api/whip
     volumes:
-      # Persist configuration
       - ./config:/app/config
-      # Map video devices
-      - /dev:/dev
-      # Map PulseAudio socket (Adjust user ID 1000 if needed)
+      - ./logs:/app/logs  # Persist logs outside container
       - /run/user/${UID:-1000}/pulse:/run/user/1000/pulse
-      # Map PulseAudio cookie if needed (often required)
-      - ${HOME}/.config/pulse/cookie:/root/.config/pulse/cookie
+      - ${HOME}/.config/pulse/cookie:/home/streamer/.config/pulse/cookie:ro
+    # Add resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    # Add health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped

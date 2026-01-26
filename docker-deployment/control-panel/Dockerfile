@@ -1,56 +1,75 @@
-FROM fedora:40
+# =============================================================================
+# Stage 1: Builder - Compile gst-plugin-webrtc
+# =============================================================================
+FROM fedora:40 AS builder
 
-# Install dependencies
-# We enable RPM Fusion free/nonfree to ensure we get all codecs if possible, 
-# though we try to stick to what the original script used.
+# Install build dependencies
 RUN dnf install -y 'dnf-command(config-manager)' && \
     dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
     dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
     dnf update -y && \
     dnf install -y \
-    python3 python3-pip \
-    gstreamer1-plugins-base gstreamer1-plugins-good \
-    gstreamer1-plugins-bad-free gstreamer1-plugins-bad-free-extras \
-    gstreamer1-plugins-ugly gstreamer1-libav \
-    gstreamer1-vaapi \
-    svt-av1 \
-    rav1e \
-    v4l-utils ffmpeg \
-    procps-ng \
-    pulseaudio-utils \
-    curl \
-    git \
-    gcc \
+    gcc gcc-c++ \
+    cargo rust \
     pkgconf-pkg-config \
     openssl-devel \
     libnice-devel \
     gstreamer1-devel \
     gstreamer1-plugins-base-devel \
     gstreamer1-plugins-bad-free-devel \
+    git \
     && dnf clean all
 
-# Install Rust via rustup (Fedora's rust is too old for gst-plugins-rs)
+# Install Rust via rustup
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Build whipsink (needed for WHIP streaming)
-# The element 'whipsink' is part of the deprecated gst-plugin-webrtchttp package
-RUN rustc --version && cargo --version && \
-    git clone https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
+# Clone and build gst-plugin-webrtc
+RUN cargo --version && rustc --version && \
+    git clone --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
     cd /tmp/gst-plugins-rs && \
-    # Build release version of the shared library
-    cargo build --release --package gst-plugin-webrtchttp && \
-    # Install the plugin to the system GStreamer directory
-    cp target/release/libgstwebrtchttp.so /usr/lib64/gstreamer-1.0/ && \
-    # Cleanup to keep image small
-    cd / && rm -rf /tmp/gst-plugins-rs
+    cargo build --release --package gst-plugin-webrtc && \
+    # Verify build succeeded
+    ls -lh target/release/libgstwebrtc.so
 
-# Install Python deps
-RUN pip3 install flask psutil
+# =============================================================================
+# Stage 2: Runtime - Final minimal image
+# =============================================================================
+FROM fedora:40 AS runtime
+
+# Install runtime dependencies only
+RUN dnf install -y 'dnf-command(config-manager)' && \
+    dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
+    dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && \
+    dnf update -y && \
+    dnf install -y \
+    python3 python3-pip \
+    gstreamer1-plugins-base \
+    gstreamer1-plugins-good \
+    gstreamer1-plugins-bad-free \
+    gstreamer1-plugins-bad-free-extras \
+    gstreamer1-plugins-ugly \
+    gstreamer1-libav \
+    gstreamer1-vaapi \
+    svt-av1 \
+    rav1e \
+    v4l-utils \
+    ffmpeg \
+    procps-ng \
+    pulseaudio-utils \
+    curl \
+    && dnf clean all && \
+    rm -rf /var/cache/dnf /var/lib/dnf
+
+# Copy built library from builder stage
+COPY --from=builder /tmp/gst-plugins-rs/target/release/libgstwebrtc.so /usr/lib64/gstreamer-1.0/
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir flask psutil requests flask-socketio
 
 # Create app directory
 WORKDIR /app
-RUN mkdir -p /app/scripts /app/config /app/templates
+RUN mkdir -p /app/scripts /app/config /app/templates /app/logs
 
 # Copy application files
 COPY stream-control.py /app/
@@ -60,11 +79,12 @@ COPY scripts /app/scripts/
 # Make scripts executable
 RUN chmod +x /app/scripts/*.sh
 
-# Create a non-root user (optional, but good practice, though we need video access)
-# We will run as root for simplicity with device access for now, 
-# or rely on 'docker run --user' if needed.
-# But GStreamer often needs access to /dev/video* and /run/user/1000/pulse.
-# Running as root inside container is easiest for accessing devices mapped from host.
+# Create non-root user
+RUN useradd -m -u 1000 streamer && \
+    chown -R streamer:streamer /app
+
+# Switch to non-root user
+USER streamer
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
@@ -73,11 +93,14 @@ ENV GST_DEBUG_NO_COLOR=1
 ENV SVT_AV1_THREADS=4
 ENV SVT_AV1_TILES=2x1
 ENV SVT_AV1_TIER=1
-# Since we use network_mode: "host", we point to localhost
 ENV SERVER_URL=http://localhost:8080/api/whip
 
 # Expose control panel port
 EXPOSE 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8081/ || exit 1
 
 # Entrypoint
 CMD ["python3", "stream-control.py"]

@@ -9,10 +9,25 @@ import os
 import psutil
 import time
 import signal
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Response
 from pathlib import Path
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from flask_socketio import SocketIO, emit
+from threading import Thread
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+
+# Create session with connection pooling and retry logic
+session = requests.Session()
+retry_strategy = Retry(
+    total=3, backoff_factor=0.1, status_forcelist=[429, 500, 502, 503, 504]
+)
+adapter = HTTPAdapter(max_retries=retry_strategy, pool_connections=10, pool_maxsize=10)
+session.mount("http://", adapter)
+session.mount("https://", adapter)
 
 # Configuration
 STREAM_DIR = Path("/app/scripts")
@@ -111,40 +126,49 @@ DEFAULT_CONFIG = {
 
 
 def get_system_stats():
-    """Get system statistics"""
+    """Get system statistics with optimized caching"""
     cpu_percent = psutil.cpu_percent(interval=0.1)
     memory = psutil.virtual_memory()
     net_io = psutil.net_io_counters()
 
     gpu_info = None
     try:
-        if (
-            not hasattr(get_system_stats, "gpu_cache")
-            or (time.time() - getattr(get_system_stats, "gpu_time", 0)) > 50
-        ):
-            result = subprocess.run(
-                [
-                    "nvidia-smi",
-                    "--query-gpu=name,utilization.gpu,temperature.gpu",
-                    "--format=csv,noheader",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                parts = result.stdout.strip().split(", ")
-                gpu_info = {
-                    "name": parts[0],
-                    "utilization": int(parts[1].split()[0]),
-                    "temperature": int(parts[2].split()[0]),
-                }
-                get_system_stats.gpu_cache = gpu_info
-                get_system_stats.gpu_time = time.time()
-            else:
-                gpu_info = getattr(get_system_stats, "gpu_cache", None)
+        # Use module-level cache for GPU stats
+        if not hasattr(get_system_stats, "gpu_cache"):
+            get_system_stats.gpu_cache = {"data": None, "timestamp": 0}
+
+        current_time = time.time()
+        cache = get_system_stats.gpu_cache
+
+        # Return cached data if within 50 seconds
+        if cache["timestamp"] > 0 and (current_time - cache["timestamp"]) < 50:
+            gpu_info = cache["data"]
         else:
-            gpu_info = getattr(get_system_stats, "gpu_cache", None)
+            try:
+                result = subprocess.run(
+                    [
+                        "nvidia-smi",
+                        "--query-gpu=name,utilization.gpu,temperature.gpu",
+                        "--format=csv,noheader",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    parts = result.stdout.strip().split(", ")
+                    gpu_info = {
+                        "name": parts[0],
+                        "utilization": int(parts[1].split()[0]),
+                        "temperature": int(parts[2].split()[0]),
+                    }
+                    # Update cache
+                    cache["data"] = gpu_info
+                    cache["timestamp"] = current_time
+                else:
+                    gpu_info = cache["data"]
+            except:
+                gpu_info = cache["data"]
     except:
         pass
 
@@ -172,35 +196,35 @@ def get_stream_status():
         except:
             PID_FILE.unlink(missing_ok=True)
 
-    # Check Broadcast Box
+    # Check Broadcast Box with caching
     broadcast_box_active = False
     stream_info = None
-    try:
-        # Check if broadcast-box is reachable
-        # Since we use network_mode: "host", we access via localhost
-        result = subprocess.run(
-            ["curl", "-s", "http://localhost:8080/api/status"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        if result.returncode == 0:
-            broadcast_box_active = True
-            stream_info = json.loads(result.stdout)
-    except:
-        # Try localhost if not in docker network yet (fallback)
+
+    # Use module-level cache
+    if not hasattr(get_stream_status, "broadcast_cache"):
+        get_stream_status.broadcast_cache = {"data": None, "timestamp": 0}
+
+    current_time = time.time()
+    cache = get_stream_status.broadcast_cache
+
+    # Return cached data if within 5 seconds
+    if cache["timestamp"] > 0 and (current_time - cache["timestamp"]) < 5:
+        broadcast_box_active = cache["data"].get("active", False)
+        stream_info = cache["data"].get("info")
+    else:
         try:
-            result = subprocess.run(
-                ["curl", "-s", "http://localhost:8080/api/status"],
-                capture_output=True,
-                text=True,
-                timeout=1,
-            )
-            if result.returncode == 0:
+            # Use requests with timeout
+            response = session.get("http://localhost:8080/api/status", timeout=2)
+            if response.status_code == 200:
                 broadcast_box_active = True
-                stream_info = json.loads(result.stdout)
-        except:
-            pass
+                stream_info = response.json()
+                # Update cache
+                cache["data"] = {"active": True, "info": stream_info}
+                cache["timestamp"] = current_time
+        except requests.exceptions.RequestException:
+            # Update cache with failure state
+            cache["data"] = {"active": False, "info": None}
+            cache["timestamp"] = current_time
 
     return {
         "streaming": streaming,
@@ -410,5 +434,46 @@ def api_logs():
         return jsonify({"logs": [f"Error reading logs: {str(e)}"]})
 
 
+@app.route("/api/logs/stream")
+def api_logs_stream():
+    """Server-Sent Events endpoint for log streaming"""
+
+    def generate():
+        if LOG_FILE.exists():
+            last_pos = 0
+            while True:
+                try:
+                    current_size = LOG_FILE.stat().st_size
+                    if current_size > last_pos:
+                        with open(LOG_FILE, "r") as f:
+                            f.seek(last_pos)
+                            new_lines = f.readlines()
+                            last_pos = f.tell()
+                            for line in new_lines:
+                                yield f"data: {line.strip()}\n\n"
+                except Exception as e:
+                    print(f"Log stream error: {e}")
+                time.sleep(1)  # Check for new logs every second
+
+    return Response(generate(), mimetype="text/event-stream")
+
+
+def background_task():
+    """Emit periodic updates to all connected clients"""
+    while True:
+        try:
+            stats = get_system_stats()
+            status = get_stream_status()
+            socketio.emit("combined_update", {"stats": stats, "status": status})
+        except Exception as e:
+            print(f"Error in background task: {e}")
+        socketio.sleep(2)  # Update every 2 seconds
+
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8081, debug=False)
+    # Start background task
+    bg_thread = Thread(target=background_task)
+    bg_thread.daemon = True
+    bg_thread.start()
+
+    socketio.run(app, host="0.0.0.0", port=8081, debug=False)

@@ -14,6 +14,10 @@ RESOLUTION="${RESOLUTION:-1280x720}"
 FPS="${FPS:-60}"
 BITRATE="${BITRATE:-4000}"
 
+# Source queue configuration
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$SCRIPT_DIR/queue-config.sh"
+
 echo "=== Optimized AV1 Streaming for OptiPlex ==="
 echo "CPU: Intel Pentium G3250T (4 cores, 3.5GHz)"
 echo "Capture: 2560x1440 @ 144Hz"
@@ -54,12 +58,12 @@ gst-launch-1.0 \
   v4l2src device="$VIDEO_DEVICE" \
   ! video/x-raw,width=2560,height=1440,framerate=144/1 \
   ! videoconvert ! 'video/x-raw,format=I420' \
-  ! queue max-size-buffers=2 max-size-time=0 max-size-bytes=1048576 leaky=1 \
+  ! $QUEUE_VIDEO_LOW_RES \
   ! videorate drop-only=true \
   ! video/x-raw,framerate=60/1 \
   ! videoscale method=0 add-borders=true n-threads=4 \
   ! video/x-raw,width=1280,height=720 \
-  ! queue max-size-buffers=2 max-size-time=0 max-size-bytes=655360 leaky=1 \
+  ! $QUEUE_VIDEO_LOW_RES \
   ! svtav1enc \
       preset=10 \
       bitrate=$BITRATE \
@@ -74,7 +78,7 @@ gst-launch-1.0 \
       tune=1 \
   ! av1parse \
   ! rtpav1pay pt=96 \
-  ! queue max-size-buffers=2 max-size-time=0 max-size-bytes=1048576 \
+  ! $QUEUE_RTP \
   ! application/x-rtp,media=video,encoding-name=AV1,payload=96,clock-rate=90000 \
   ! whip0. \
   \
@@ -82,14 +86,14 @@ gst-launch-1.0 \
   ! audioconvert \
   ! audioresample \
   ! 'audio/x-raw,rate=48000,channels=2' \
-  ! queue max-size-buffers=1 max-size-time=0 max-size-bytes=65536 leaky=1 \
+  ! $QUEUE_AUDIO \
   ! opusenc bitrate=192000 \
       audio-type=generic \
       frame-size=20 \
       inband-fec=false \
       complexity=8 \
   ! rtpopuspay pt=97 \
-  ! queue max-size-buffers=1 max-size-time=0 max-size-bytes=32768 \
+  ! $QUEUE_RTP \
   ! application/x-rtp,media=audio,encoding-name=OPUS,payload=97,clock-rate=48000 \
   ! whip0.sink_1 \
   \
