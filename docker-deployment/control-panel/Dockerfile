@@ -34,10 +34,9 @@ RUN set -e && \
     ls -lh target/release/libgstwebrtc.so && \
     echo "Build successful"
 
-# =============================================================================
-# Stage 2: Runtime - Final minimal image
-# =============================================================================
-FROM fedora:40 AS runtime
+# Create app directory
+WORKDIR /app
+RUN mkdir -p /app/scripts /app/config /app/templates /app/logs
 
 # Install runtime dependencies only
 RUN dnf install -y 'dnf-command(config-manager)' && \
@@ -62,9 +61,6 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
     curl \
     && dnf clean all && \
     rm -rf /var/cache/dnf /var/lib/dnf
-
-# Copy built library from builder stage
-COPY --from=builder /tmp/gst-plugins-rs/target/release/libgstwebrtc.so /usr/lib64/gstreamer-1.0/
 
 # Install Python dependencies
 RUN pip3 install --no-cache-dir flask psutil requests flask-socketio
