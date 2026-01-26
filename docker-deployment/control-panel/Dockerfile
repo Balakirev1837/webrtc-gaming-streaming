@@ -29,8 +29,9 @@ RUN cargo --version && rustc --version && \
     git clone --depth 1 https://gitlab.freedesktop.org/gstreamer/gst-plugins-rs.git /tmp/gst-plugins-rs && \
     cd /tmp/gst-plugins-rs && \
     cargo build --release --package gst-plugin-webrtc && \
-    # Verify build succeeded
-    ls -lh target/release/libgstwebrtc.so
+    # Verify build succeeded and check for library
+    ls -lh target/release/libgstwebrtc.so && \
+    echo "Build successful"
 
 # =============================================================================
 # Stage 2: Runtime - Final minimal image
