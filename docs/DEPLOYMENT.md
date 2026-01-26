@@ -26,25 +26,27 @@ This guide describes how to deploy the WebRTC Gaming Streaming solution using Do
 ### Deployment Steps (On Mini PC)
 
 1. **Clone the repository** (if you haven't already):
-   ```bash
-   git clone https://github.com/Balakirev1837/webrtc-gaming-streaming.git
-   cd webrtc-gaming-streaming
-   ```
+    ```bash
+    git clone https://github.com/Balakirev1837/webrtc-gaming-streaming.git
+    cd webrtc-gaming-streaming
+    ```
 
-2. **Navigate to the Docker deployment directory**:
-   ```bash
-   cd docker-deployment
-   ```
+2. **Navigate to Docker deployment directory**:
+    ```bash
+    cd docker-deployment
+    ```
 
-3. **Start the services**:
-   ```bash
-   docker compose up -d --build
-   ```
+3. **Start services**:
+    ```bash
+    docker compose up -d --build
+    ```
 
-   This will:
-   - Build the `streamer` container (includes Control Panel, GStreamer, drivers).
-   - Pull the `broadcast-box` container.
-   - Start both services in `host` network mode.
+    This will:
+    - Build `streamer` container in **multi-stage** (builder + runtime)
+    - Include Control Panel, GStreamer, and WebRTC plugins
+    - Pull `broadcast-box` container.
+    - Start both services in `host` network mode.
+    - Run as **non-root user (uid=1000)** for enhanced security.
 
 4. **Access the Application**:
    - **Viewer:** `http://<mini-pc-ip>:8080/gaming`
@@ -75,7 +77,15 @@ If audio isn't working:
 4. Ensure you are running `docker compose` as a user who can read that cookie (or use `sudo -E docker compose ...` to preserve environment, though editing the file is safer).
 
 **Video devices:**
-The container runs in `privileged` mode with `/dev` mapped to ensure access to capture cards and hardware encoders (VA-API/NVENC). If your capture card isn't found, check `ls -l /dev/video*` on the host.
+The container runs with **specific capabilities** (SYS_RAWIO) instead of privileged mode for enhanced security. Only `/dev/video0` and `/dev/snd` are mapped to ensure access to capture cards and audio.
+
+**Security features:**
+- Non-root user (uid=1000) prevents privilege escalation
+- Specific capabilities only (SYS_RAWIO for capture card access)
+- Resource limits (CPU: 2 cores, Memory: 2GB) prevent system overload
+- Health checks ensure container is running properly
+
+If your capture card isn't found, check `ls -l /dev/video*` on the host.
 
 **Logs:**
 View logs for troubleshooting:
