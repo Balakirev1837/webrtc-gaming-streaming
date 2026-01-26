@@ -55,8 +55,10 @@ gst-launch-1.0 \
   ! video/x-raw,width=2560,height=1440,framerate=144/1 \
   ! videoconvert ! 'video/x-raw,format=I420' \
   ! queue max-size-buffers=2 max-size-time=0 max-size-bytes=1048576 leaky=1 \
+  ! videorate drop-only=true \
+  ! video/x-raw,framerate=60/1 \
   ! videoscale method=0 add-borders=true n-threads=4 \
-  ! video/x-raw,width=1280,height=720,framerate=60/1 \
+  ! video/x-raw,width=1280,height=720 \
   ! queue max-size-buffers=2 max-size-time=0 max-size-bytes=655360 leaky=1 \
   ! svtav1enc \
       preset=10 \
