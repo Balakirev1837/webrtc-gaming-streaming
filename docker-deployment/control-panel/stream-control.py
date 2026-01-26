@@ -247,18 +247,17 @@ def start_stream(script_id, config):
         env["BITRATE"] = str(config["bitrate"])
         env["FPS"] = str(config["fps"])
 
-        # Open log file
-        log_fd = open(LOG_FILE, "w")
-
-        # Start process
-        process = subprocess.Popen(
-            [str(script_path)],
-            env=env,
-            cwd=str(STREAM_DIR),
-            stdout=log_fd,
-            stderr=subprocess.STDOUT,  # Capture stderr to log file too
-            start_new_session=True,
-        )
+        # Open log file and ensure it is closed after subprocess spawn
+        with open(LOG_FILE, "w") as log_fd:
+            # Start process
+            process = subprocess.Popen(
+                [str(script_path)],
+                env=env,
+                cwd=str(STREAM_DIR),
+                stdout=log_fd,
+                stderr=subprocess.STDOUT,  # Capture stderr to log file too
+                start_new_session=True,
+            )
 
         # Save PID
         PID_FILE.write_text(str(process.pid))
@@ -386,7 +385,24 @@ def api_logs():
     """API: Get recent logs"""
     try:
         if LOG_FILE.exists():
-            # Read last 50 lines
+            # Use tail to get last 50 lines efficiently to avoid memory spikes
+            # Reading the entire file into memory (read_text) is dangerous for large logs
+            try:
+                result = subprocess.run(
+                    ["tail", "-n", "50", str(LOG_FILE)],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                )
+                if result.returncode == 0:
+                    lines = result.stdout.splitlines()
+                    return jsonify({"logs": lines})
+            except subprocess.TimeoutExpired:
+                return jsonify({"logs": ["Error: Log read timed out"]})
+            except Exception as e:
+                return jsonify({"logs": [f"Error reading logs with tail: {str(e)}"]})
+
+            # Fallback if tail fails for some reason
             lines = LOG_FILE.read_text().splitlines()[-50:]
             return jsonify({"logs": lines})
         return jsonify({"logs": ["No logs available yet."]})
