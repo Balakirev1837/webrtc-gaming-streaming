@@ -9,8 +9,21 @@ cd "$DIR"
 
 # Check for flags
 FORCE=0
-if [ "$1" == "--force" ]; then
-    FORCE=1
+REPAIR=0
+
+for arg in "$@"; do
+    if [ "$arg" == "--force" ]; then
+        FORCE=1
+    fi
+    if [ "$arg" == "--repair" ]; then
+        REPAIR=1
+    fi
+done
+
+if [ $REPAIR -eq 1 ]; then
+    echo "🛠️  Repair mode enabled: Pruning Docker builder cache..."
+    echo "   This fixes 'parent snapshot does not exist' and other cache corruption errors."
+    docker builder prune --all --force
 fi
 
 echo "🔄 Checking for updates..."
@@ -21,7 +34,7 @@ LOCAL=$(git rev-parse HEAD)
 # If on a different branch, this might need adjustment, but safe for default deployment.
 REMOTE=$(git rev-parse origin/master)
 
-if [ "$LOCAL" != "$REMOTE" ] || [ $FORCE -eq 1 ]; then
+if [ "$LOCAL" != "$REMOTE" ] || [ $FORCE -eq 1 ] || [ $REPAIR -eq 1 ]; then
     if [ "$LOCAL" != "$REMOTE" ]; then
         echo "⚡ Code update found!"
         
@@ -34,7 +47,7 @@ if [ "$LOCAL" != "$REMOTE" ] || [ $FORCE -eq 1 ]; then
         echo "⬇️  Pulling changes..."
         git pull origin master
     else
-        echo "⚡ Force update requested. Proceeding with rebuild..."
+        echo "⚡ Force update/repair requested. Proceeding with rebuild..."
     fi
     
     echo "📥 Pulling latest external images (Broadcast Box)..."
@@ -45,7 +58,13 @@ if [ "$LOCAL" != "$REMOTE" ] || [ $FORCE -eq 1 ]; then
     # --build: Rebuild the local streamer image
     # --force-recreate: Stop and recreate containers to ensure no stale state remains
     # --remove-orphans: Remove containers for services that were removed from docker-compose.yml
-    docker compose up -d --build --force-recreate --remove-orphans
+    if ! docker compose up -d --build --force-recreate --remove-orphans; then
+        echo "❌ Error: Service startup failed."
+        echo "   If you see 'failed to prepare extraction snapshot' or 'parent snapshot does not exist',"
+        echo "   it indicates a corrupted Docker cache."
+        echo "   👉 Run './update.sh --repair' to fix this."
+        exit 1
+    fi
     
     echo "🧹 Cleaning up..."
     # Prune dangling images to save space (important for mini PCs)
@@ -55,4 +74,5 @@ if [ "$LOCAL" != "$REMOTE" ] || [ $FORCE -eq 1 ]; then
 else
     echo "✅ System is already up to date."
     echo "   (Run './update.sh --force' to force a rebuild/restart)"
+    echo "   (Run './update.sh --repair' to clear cache and rebuild)"
 fi
